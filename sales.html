@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Pipeline - CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .calendar-day { min-height: 80px; }
+    .calendar-day.has-event { background-color: #e0e7ff; }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <header class="bg-indigo-600 text-white p-5 flex justify-between items-center shadow">
+    <h1 class="text-2xl font-bold">💰 Sales Hub</h1>
+    <div class="flex items-center gap-4">
+      <span id="userRoleBadge" class="bg-indigo-800 px-3 py-1 rounded-full text-sm"></span>
+      <button onclick="logout()" class="bg-white text-indigo-600 px-5 py-2 rounded-lg font-medium">Logout</button>
+    </div>
+  </header>
+
+  <div class="flex">
+    <div class="w-64 bg-gray-800 text-white h-screen fixed overflow-y-auto">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold mb-6 text-gray-300">MAIN MENU</h3>
+        <ul class="space-y-2" id="sidebarMenu">
+          <!-- Dynamically filled -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="ml-64 flex-1 p-8">
+      <!-- Tabs -->
+      <div class="flex flex-wrap gap-2 mb-6 border-b pb-2">
+        <button onclick="showTab('pipeline')" id="tab-pipeline" class="tab-btn px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium">Pipeline</button>
+        <button onclick="showTab('attendance')" id="tab-attendance" class="tab-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium">Attendance</button>
+        <button onclick="showTab('orders')" id="tab-orders" class="tab-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium">Sales Orders</button>
+        <button onclick="showTab('timeline')" id="tab-timeline" class="tab-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium">Timeline</button>
+        <button onclick="showTab('calendar')" id="tab-calendar" class="tab-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium">Activities Calendar</button>
+        <button onclick="showTab('customers')" id="tab-customers" class="tab-btn px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium">Customer Relations</button>
+      </div>
+
+      <!-- ========== PIPELINE TAB ========== -->
+      <div id="panel-pipeline" class="tab-panel">
+        <div class="bg-white rounded-2xl shadow p-6 mb-8">
+          <h2 class="text-xl font-semibold mb-4">Add New Deal</h2>
+          <form id="dealForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1">Deal Title</label>
+              <input type="text" id="dealTitle" class="w-full border rounded-lg p-3" required placeholder="e.g. Website for ABC Sdn Bhd">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Contact</label>
+              <select id="contactId" class="w-full border rounded-lg p-3" required></select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Deal Value (RM)</label>
+              <input type="number" id="dealValue" class="w-full border rounded-lg p-3" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Stage</label>
+              <select id="stage" class="w-full border rounded-lg p-3" required>
+                <option value="Lead">Lead</option>
+                <option value="Proposal">Proposal Sent</option>
+                <option value="Negotiation">Negotiation</option>
+                <option value="Closed">Closed Won</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Expected Close Date</label>
+              <input type="date" id="closeDate" class="w-full border rounded-lg p-3">
+            </div>
+            <div class="md:col-span-2 mt-4">
+              <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700">Save Deal</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="mb-6">
+          <input type="text" id="searchInput" 
+                 class="w-full max-w-md border border-gray-300 rounded-lg p-4 focus:outline-none focus:border-indigo-500"
+                 placeholder="🔍 Search deal title...">
+        </div>
+
+        <h2 class="text-2xl font-bold mb-4">Current Pipeline</h2>
+        <div class="bg-white rounded-2xl shadow overflow-hidden">
+          <table class="w-full" id="dealsTable">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left p-4">Deal Title</th>
+                <th class="text-left p-4">Contact Name</th>
+                <th class="text-right p-4">Value (RM)</th>
+                <th class="text-center p-4">Stage</th>
+                <th class="text-center p-4">Close Date</th>
+                <th class="text-center p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========== ATTENDANCE TAB ========== -->
+      <div id="panel-attendance" class="tab-panel hidden">
+        <div class="bg-white rounded-2xl shadow p-6 mb-8">
+          <h2 class="text-xl font-semibold mb-4">Sales Attendance</h2>
+          <div class="flex flex-wrap gap-4 items-end mb-6">
+            <div>
+              <label class="block text-sm font-medium mb-1">Date</label>
+              <input type="date" id="attDate" class="border rounded-lg p-3">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Notes (optional)</label>
+              <input type="text" id="attNotes" class="border rounded-lg p-3 w-64" placeholder="e.g. Site visit">
+            </div>
+            <button onclick="doCheckIn()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">Check In</button>
+            <button onclick="doCheckOut()" class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700">Check Out</button>
+          </div>
+          <p id="attStatus" class="text-sm text-gray-600 mb-4"></p>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-4">My Attendance History</h2>
+        <div class="bg-white rounded-2xl shadow overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left p-4">Date</th>
+                <th class="text-left p-4">Check In</th>
+                <th class="text-left p-4">Check Out</th>
+                <th class="text-left p-4">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="attTableBody" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========== SALES ORDERS TAB ========== -->
+      <div id="panel-orders" class="tab-panel hidden">
+        <div class="bg-white rounded-2xl shadow p-6 mb-8">
+          <h2 class="text-xl font-semibold mb-4">Create Sales Order</h2>
+          <form id="orderForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Related Deal</label>
+              <select id="orderDealId" class="w-full border rounded-lg p-3" required></select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Order Number</label>
+              <input type="text" id="orderNumber" class="w-full border rounded-lg p-3" required placeholder="SO-2026-001">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Amount (RM)</label>
+              <input type="number" id="orderAmount" class="w-full border rounded-lg p-3" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Status</label>
+              <select id="orderStatus" class="w-full border rounded-lg p-3">
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Order Date</label>
+              <input type="date" id="orderDate" class="w-full border rounded-lg p-3" required>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1">Notes</label>
+              <textarea id="orderNotes" rows="2" class="w-full border rounded-lg p-3"></textarea>
+            </div>
+            <div class="md:col-span-2">
+              <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700">Save Order</button>
+            </div>
+          </form>
+        </div>
+
+        <h2 class="text-2xl font-bold mb-4">Sales Orders</h2>
+        <div class="bg-white rounded-2xl shadow overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left p-4">Order #</th>
+                <th class="text-left p-4">Deal</th>
+                <th class="text-right p-4">Amount (RM)</th>
+                <th class="text-center p-4">Status</th>
+                <th class="text-center p-4">Date</th>
+                <th class="text-center p-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========== TIMELINE TAB ========== -->
+      <div id="panel-timeline" class="tab-panel hidden">
+        <h2 class="text-2xl font-bold mb-4">Sales Timeline / History</h2>
+        <p class="text-gray-600 mb-4">Recent deals, orders and activities in chronological order.</p>
+        <div id="timelineList" class="space-y-4"></div>
+      </div>
+
+      <!-- ========== CALENDAR TAB ========== -->
+      <div id="panel-calendar" class="tab-panel hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold">Activities Calendar</h2>
+          <div class="flex gap-2">
+            <button onclick="changeMonth(-1)" class="px-3 py-1 bg-gray-200 rounded">◀</button>
+            <span id="calMonthLabel" class="font-semibold px-4"></span>
+            <button onclick="changeMonth(1)" class="px-3 py-1 bg-gray-200 rounded">▶</button>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-4 overflow-x-auto">
+          <div class="grid grid-cols-7 gap-1 text-center font-medium text-sm text-gray-600 mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+        </div>
+        <div class="mt-6">
+          <h3 class="font-semibold mb-2">Activities on selected day</h3>
+          <ul id="dayActivities" class="bg-white rounded-xl shadow p-4 space-y-2 min-h-[100px]"></ul>
+        </div>
+      </div>
+
+      <!-- ========== CUSTOMER RELATIONS TAB ========== -->
+      <div id="panel-customers" class="tab-panel hidden">
+        <h2 class="text-2xl font-bold mb-4">Customer Relationship</h2>
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-1">Select Contact</label>
+          <select id="relContactId" class="w-full max-w-md border rounded-lg p-3"></select>
+        </div>
+        <div id="relDetails" class="bg-white rounded-2xl shadow p-6 mb-6 hidden">
+          <h3 class="text-lg font-semibold mb-2" id="relName"></h3>
+          <p class="text-gray-600" id="relMeta"></p>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-medium mb-2">Related Deals</h4>
+              <ul id="relDeals" class="space-y-1 text-sm"></ul>
+            </div>
+            <div>
+              <h4 class="font-medium mb-2">Recent Activities</h4>
+              <ul id="relActivities" class="space-y-1 text-sm"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { showToast, showConfirm } from "./js/toast.js";
+    import { db, auth } from "./js/firebase-config.js";
+    import { 
+      collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc, 
+      query, where, updateDoc 
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { protectPage, logout, goTo } from "./js/auth-helpers.js";
+
+    window.logout = logout;
+    window.goTo = goTo;
+
+    // Allow admin and sales
+    const profile = await protectPage(["admin", "sales"]);
+    document.getElementById("userRoleBadge").textContent = "Role: " + (profile.role || "").toUpperCase();
+
+    // Build sidebar based on role
+    const sidebar = document.getElementById("sidebarMenu");
+    if (profile.role === "admin") {
+      sidebar.innerHTML = `
+        <li onclick="goTo('dashboard.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">🏠 Dashboard</li>
+        <li onclick="goTo('contacts.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">👥 Contacts</li>
+        <li onclick="goTo('activities.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">📅 Activities</li>
+        <li class="bg-indigo-700 p-4 rounded-xl font-medium">💰 Sales Pipeline</li>
+        <li onclick="goTo('invoices.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">📄 Invoices</li>
+        <li onclick="goTo('hr.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">👔 HR</li>
+      `;
+    } else {
+      sidebar.innerHTML = `
+        <li onclick="goTo('contacts.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">👥 Contacts</li>
+        <li onclick="goTo('activities.html')" class="hover:bg-gray-700 p-4 rounded-xl cursor-pointer">📅 Activities</li>
+        <li class="bg-indigo-700 p-4 rounded-xl font-medium">💰 Sales Hub</li>
+        <li class="text-gray-500 p-4 text-sm">Sales access only</li>
+      `;
+    }
+
+    // ========== TABS ==========
+    window.showTab = (name) => {
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.remove("bg-indigo-600", "text-white");
+        b.classList.add("bg-gray-200", "text-gray-700");
+      });
+      document.getElementById("panel-" + name).classList.remove("hidden");
+      const btn = document.getElementById("tab-" + name);
+      btn.classList.remove("bg-gray-200", "text-gray-700");
+      btn.classList.add("bg-indigo-600", "text-white");
+    };
+
+    // ========== SHARED DATA ==========
+    let contactsMap = {};
+    let dealsMap = {};
+    let allDeals = [];
+    let allActivities = [];
+    let allOrders = [];
+    let myAttendance = [];
+
+    // Load contacts for selects
+    onSnapshot(collection(db, "contacts"), (snapshot) => {
+      contactsMap = {};
+      const select = document.getElementById("contactId");
+      const relSelect = document.getElementById("relContactId");
+      select.innerHTML = '<option value="">-- Select Contact --</option>';
+      relSelect.innerHTML = '<option value="">-- Select Contact --</option>';
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        contactsMap[docSnap.id] = data;
+        const label = data.name + (data.company ? ` (${data.company})` : '');
+        const opt1 = document.createElement("option");
+        opt1.value = docSnap.id;
+        opt1.textContent = label;
+        select.appendChild(opt1);
+        const opt2 = document.createElement("option");
+        opt2.value = docSnap.id;
+        opt2.textContent = label;
+        relSelect.appendChild(opt2);
+      });
+    });
+
+    // ========== PIPELINE ==========
+    document.getElementById("dealForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await addDoc(collection(db, "deals"), {
+          title: document.getElementById("dealTitle").value,
+          contactId: document.getElementById("contactId").value,
+          value: parseFloat(document.getElementById("dealValue").value),
+          stage: document.getElementById("stage").value,
+          closeDate: document.getElementById("closeDate").value,
+          createdAt: serverTimestamp(),
+          userId: auth.currentUser.uid,
+          history: [{ action: "Created", by: profile.name || profile.email, at: new Date().toISOString() }]
+        });
+        showToast("✅ Deal saved successfully!", "success");
+        e.target.reset();
+      } catch (error) { 
+        showToast("❌ Error saving deal!", "error");
+      }
+    });
+
+    const tbody = document.querySelector("#dealsTable tbody");
+    const searchInput = document.getElementById("searchInput");
+
+    onSnapshot(collection(db, "deals"), (snapshot) => {
+      allDeals = [];
+      dealsMap = {};
+      const orderSelect = document.getElementById("orderDealId");
+      orderSelect.innerHTML = '<option value="">-- Select Deal --</option>';
+
+      snapshot.forEach(docSnap => {
+        const data = { id: docSnap.id, ...docSnap.data() };
+        allDeals.push(data);
+        dealsMap[docSnap.id] = data;
+        const opt = document.createElement("option");
+        opt.value = docSnap.id;
+        opt.textContent = data.title + (data.value ? ` (RM ${data.value.toLocaleString()})` : '');
+        orderSelect.appendChild(opt);
+      });
+      renderDeals(allDeals);
+      renderTimeline();
+    });
+
+    function renderDeals(deals) {
+      tbody.innerHTML = "";
+      deals.forEach(item => {
+        const contactName = contactsMap[item.contactId]?.name || "Unknown Contact";
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        row.innerHTML = `
+          <td class="p-4 font-medium">${item.title}</td>
+          <td class="p-4">${contactName}</td>
+          <td class="p-4 text-right font-medium">RM ${item.value ? item.value.toLocaleString() : '0'}</td>
+          <td class="p-4 text-center">
+            <span class="px-4 py-1 rounded-full text-sm font-medium ${item.stage === 'Closed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+              ${item.stage}
+            </span>
+          </td>
+          <td class="p-4 text-center">${item.closeDate || '-'}</td>
+          <td class="p-4 text-center">
+            <button onclick="deleteDeal('${item.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    searchInput.addEventListener("input", () => {
+      const term = searchInput.value.toLowerCase();
+      const filtered = allDeals.filter(d => d.title.toLowerCase().includes(term));
+      renderDeals(filtered);
+    });
+
+    window.deleteDeal = async (id) => {
+      const confirmed = await showConfirm("Are you sure you want to delete this deal?");
+      
+      if (confirmed) {
+        try {
+          await deleteDoc(doc(db, "deals", id));
+          showToast("Deal deleted successfully!");
+        } catch (error) {
+          showToast("Error deleting deal!", "error");
+        }
+      }
+    };
+
+    // ========== ATTENDANCE ==========
+    const todayStr = new Date().toISOString().slice(0, 10);
+    document.getElementById("attDate").value = todayStr;
+
+    const attQuery = query(
+      collection(db, "attendance"),
+      where("userId", "==", auth.currentUser.uid)
+    );
+    onSnapshot(attQuery, (snap) => {
+      myAttendance = [];
+      snap.forEach(d => myAttendance.push({ id: d.id, ...d.data() }));
+      myAttendance.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      renderAttendance();
+      updateAttStatus();
+    });
+
+    function renderAttendance() {
+      const body = document.getElementById("attTableBody");
+      body.innerHTML = "";
+      myAttendance.forEach(item => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        row.innerHTML = `
+          <td class="p-4">${item.date}</td>
+          <td class="p-4">${item.checkIn ? new Date(item.checkIn).toLocaleTimeString('en-MY') : '-'}</td>
+          <td class="p-4">${item.checkOut ? new Date(item.checkOut).toLocaleTimeString('en-MY') : '-'}</td>
+          <td class="p-4">${item.notes || '-'}</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    function updateAttStatus() {
+      const date = document.getElementById("attDate").value;
+      const record = myAttendance.find(a => a.date === date);
+      const statusEl = document.getElementById("attStatus");
+      if (!record) {
+        statusEl.textContent = "No attendance recorded for this date.";
+      } else if (record.checkIn && !record.checkOut) {
+        statusEl.textContent = `Checked in at ${new Date(record.checkIn).toLocaleTimeString('en-MY')}. Remember to check out.`;
+      } else if (record.checkIn && record.checkOut) {
+        statusEl.textContent = `Checked in ${new Date(record.checkIn).toLocaleTimeString('en-MY')} · Checked out ${new Date(record.checkOut).toLocaleTimeString('en-MY')}`;
+      }
+    }
+
+    document.getElementById("attDate").addEventListener("change", updateAttStatus);
+
+    window.doCheckIn = async () => {
+      const date = document.getElementById("attDate").value;
+      const notes = document.getElementById("attNotes").value;
+      if (!date) return showToast("Please select a date.", "error");
+      const existing = myAttendance.find(a => a.date === date);
+      if (existing && existing.checkIn) return showToast("You are already checked in for this date.", "error");
+
+      try {
+        if (existing) {
+          await updateDoc(doc(db, "attendance", existing.id), {
+            checkIn: new Date().toISOString(),
+            notes: notes || existing.notes
+          });
+        } else {
+          await addDoc(collection(db, "attendance"), {
+            userId: auth.currentUser.uid,
+            userName: profile.name || profile.email,
+            date,
+            checkIn: new Date().toISOString(),
+            checkOut: null,
+            notes,
+            createdAt: serverTimestamp()
+          });
+        }
+        showToast("✅ Checked in!", "success");
+      } catch (e) { showToast("❌ Error checking in!", "error"); }
+    };
+
+    window.doCheckOut = async () => {
+      const date = document.getElementById("attDate").value;
+      if (!date) return showToast("Please select a date.", "error");
+      const existing = myAttendance.find(a => a.date === date);
+      if (!existing || !existing.checkIn) return showToast("Please check in first.", "error");
+      if (existing.checkOut) return showToast("Already checked out.", "error");
+
+      try {
+        await updateDoc(doc(db, "attendance", existing.id), {
+          checkOut: new Date().toISOString()
+        });
+        showToast("✅ Checked out!", "success");
+      } catch (e) { showToast("❌ Error checking out!", "error"); }
+    };
+
+    // ========== SALES ORDERS ==========
+    document.getElementById("orderDate").value = todayStr;
+
+    document.getElementById("orderForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await addDoc(collection(db, "salesOrders"), {
+          dealId: document.getElementById("orderDealId").value,
+          orderNumber: document.getElementById("orderNumber").value,
+          amount: parseFloat(document.getElementById("orderAmount").value),
+          status: document.getElementById("orderStatus").value,
+          orderDate: document.getElementById("orderDate").value,
+          notes: document.getElementById("orderNotes").value,
+          createdAt: serverTimestamp(),
+          userId: auth.currentUser.uid
+        });
+        showToast("✅ Sales order saved!", "success");
+        e.target.reset();
+        document.getElementById("orderDate").value = todayStr;
+      } catch (err) { showToast("❌ Error saving sales order!", "error"); }
+    });
+
+    onSnapshot(collection(db, "salesOrders"), (snap) => {
+      allOrders = [];
+      snap.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
+      allOrders.sort((a, b) => (b.orderDate || "").localeCompare(a.orderDate || ""));
+      renderOrders();
+      renderTimeline();
+    });
+
+    function renderOrders() {
+      const body = document.getElementById("ordersTableBody");
+      body.innerHTML = "";
+      allOrders.forEach(item => {
+        const dealTitle = dealsMap[item.dealId]?.title || "Unknown Deal";
+        const statusClass = item.status === "Delivered" ? "bg-green-100 text-green-700" :
+                            item.status === "Cancelled" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700";
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        row.innerHTML = `
+          <td class="p-4 font-medium">${item.orderNumber}</td>
+          <td class="p-4">${dealTitle}</td>
+          <td class="p-4 text-right">RM ${(item.amount || 0).toLocaleString()}</td>
+          <td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-sm ${statusClass}">${item.status}</span></td>
+          <td class="p-4 text-center">${item.orderDate || '-'}</td>
+          <td class="p-4 text-center">
+            <button onclick="deleteOrder('${item.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+          </td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    window.deleteOrder = async (id) => {
+      const confirmed = await showConfirm("Are you sure you want to delete this sales order?");
+      
+      if (confirmed) {
+        try {
+          await deleteDoc(doc(db, "salesOrders", id));
+          showToast("Sales order deleted successfully!");
+        } catch (error) {
+          showToast("Error deleting sales order!", "error");
+        }
+      }
+    };
+
+    // ========== ACTIVITIES for calendar & timeline ==========
+    onSnapshot(collection(db, "activities"), (snap) => {
+      allActivities = [];
+      snap.forEach(d => allActivities.push({ id: d.id, ...d.data() }));
+      renderCalendar();
+      renderTimeline();
+    });
+
+    // ========== TIMELINE ==========
+    function renderTimeline() {
+      const list = document.getElementById("timelineList");
+      const events = [];
+
+      allDeals.forEach(d => {
+        events.push({
+          type: "deal",
+          title: `Deal: ${d.title}`,
+          detail: `Stage: ${d.stage} · RM ${(d.value || 0).toLocaleString()}`,
+          date: d.closeDate || (d.createdAt?.toDate ? d.createdAt.toDate().toISOString().slice(0,10) : ""),
+          ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0
+        });
+      });
+
+      allOrders.forEach(o => {
+        events.push({
+          type: "order",
+          title: `Order: ${o.orderNumber}`,
+          detail: `Status: ${o.status} · RM ${(o.amount || 0).toLocaleString()}`,
+          date: o.orderDate || "",
+          ts: o.createdAt?.toDate ? o.createdAt.toDate().getTime() : 0
+        });
+      });
+
+      allActivities.forEach(a => {
+        events.push({
+          type: "activity",
+          title: `${a.actionType}`,
+          detail: a.notes || "",
+          date: a.activityDate ? a.activityDate.slice(0,10) : "",
+          ts: a.activityDate ? new Date(a.activityDate).getTime() : 0
+        });
+      });
+
+      events.sort((a, b) => b.ts - a.ts);
+      list.innerHTML = events.slice(0, 50).map(e => {
+        const color = e.type === "deal" ? "border-blue-500" : e.type === "order" ? "border-purple-500" : "border-green-500";
+        return `
+          <div class="bg-white rounded-xl shadow p-4 border-l-4 ${color}">
+            <div class="flex justify-between">
+              <span class="font-medium">${e.title}</span>
+              <span class="text-sm text-gray-500">${e.date || "—"}</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">${e.detail}</p>
+          </div>
+        `;
+      }).join("") || "<p class='text-gray-500'>No history yet.</p>";
+    }
+
+    // ========== CALENDAR ==========
+    let calYear = new Date().getFullYear();
+    let calMonth = new Date().getMonth();
+
+    window.changeMonth = (delta) => {
+      calMonth += delta;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendar();
+    };
+
+    function renderCalendar() {
+      const label = document.getElementById("calMonthLabel");
+      const grid = document.getElementById("calendarGrid");
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      label.textContent = `${monthNames[calMonth]} ${calYear}`;
+
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+      const byDate = {};
+      allActivities.forEach(a => {
+        if (!a.activityDate) return;
+        const d = a.activityDate.slice(0, 10);
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(a);
+      });
+
+      grid.innerHTML = "";
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="calendar-day border rounded p-1 bg-gray-50"></div>`;
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+        const events = byDate[dateStr] || [];
+        const has = events.length > 0;
+        const el = document.createElement("div");
+        el.className = `calendar-day border rounded p-1 cursor-pointer hover:bg-indigo-50 ${has ? "has-event" : ""}`;
+        el.innerHTML = `<div class="font-medium text-sm">${day}</div>
+          ${has ? `<div class="text-xs text-indigo-700 mt-1">${events.length} activity</div>` : ""}`;
+        el.onclick = () => showDayActivities(dateStr, events);
+        grid.appendChild(el);
+      }
+    }
+
+    function showDayActivities(dateStr, events) {
+      const ul = document.getElementById("dayActivities");
+      if (!events.length) {
+        ul.innerHTML = `<li class="text-gray-500">No activities on ${dateStr}</li>`;
+        return;
+      }
+      ul.innerHTML = events.map(a => `
+        <li class="border-b pb-2">
+          <span class="font-medium">${a.actionType}</span>
+          <span class="text-sm text-gray-500 ml-2">${a.activityDate ? new Date(a.activityDate).toLocaleTimeString('en-MY') : ""}</span>
+          <p class="text-sm text-gray-600">${a.notes || ""}</p>
+        </li>
+      `).join("");
+    }
+
+    // ========== CUSTOMER RELATIONS ==========
+    document.getElementById("relContactId").addEventListener("change", (e) => {
+      const id = e.target.value;
+      const box = document.getElementById("relDetails");
+      if (!id) { box.classList.add("hidden"); return; }
+      const c = contactsMap[id];
+      if (!c) return;
+      box.classList.remove("hidden");
+      document.getElementById("relName").textContent = c.name;
+      document.getElementById("relMeta").textContent = 
+        `${c.company || "—"} · ${c.email || "—"} · ${c.phone || "—"} · Status: ${c.status || "—"}`;
+
+      const deals = allDeals.filter(d => d.contactId === id);
+      document.getElementById("relDeals").innerHTML = deals.length
+        ? deals.map(d => `<li>• ${d.title} — RM ${(d.value||0).toLocaleString()} (${d.stage})</li>`).join("")
+        : "<li class='text-gray-500'>No deals</li>";
+
+      const acts = allActivities.slice(0, 5);
+      document.getElementById("relActivities").innerHTML = acts.length
+        ? acts.map(a => `<li>• ${a.actionType}: ${a.notes || ""} (${a.activityDate ? a.activityDate.slice(0,10) : ""})</li>`).join("")
+        : "<li class='text-gray-500'>No recent activities</li>";
+    });
+
+    // Init calendar
+    renderCalendar();
+  </script>
+</body>
+</html>
